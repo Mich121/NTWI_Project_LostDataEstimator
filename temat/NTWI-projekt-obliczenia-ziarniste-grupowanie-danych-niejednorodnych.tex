@@ -1,0 +1,92 @@
+
+
+\documentclass[a4paper,12pt]{article}
+
+\usepackage{ifxetex}
+\usepackage{url}
+
+
+\ifxetex  % XeLaTeX
+   \usepackage{fontspec}
+   \defaultfontfeatures{Mapping=tex--text}   % to support TeX conventions like dashes etc
+   \usepackage{xltxtra} % extra customisation for XeLaTeX
+   \setsansfont{Linux Biolinum O}
+%   \setmainfont[Ligatures={Common,TeX}, Numbers={OldStyle}]{Linux Libertine O}
+\else  % LaTeX
+   \usepackage[T1]{fontenc}
+   \usepackage[utf8]{inputenc}
+%   \usepackage[tt=false]{libertine}
+\fi
+
+\usepackage[polish]{babel}
+%\usepackage[british]{babel}
+ 
+
+\usepackage[all]{nowidow}  % dla unikniecia wdow i sierot
+\usepackage{indentfirst}
+%\usepackage{ifthen}
+%\usepackage{tikz}
+%\usetikzlibrary{arrows}
+%\usetikzlibrary{decorations.pathreplacing,calligraphy}
+%\usetikzlibrary{patterns}
+
+
+\usepackage{amsthm}
+
+\newtheorem{definition}{Definicja}
+
+\frenchspacing
+
+\newcommand{\aster}{*} % maybe \ding{97} ?
+\newcommand\asterism{
+   \begin{center}
+      %\vspace{-1.75em}
+      \parbox{1in}{ % needed to prevent split across page boundaries
+         \begin{center}
+            \aster\\
+            \aster\hspace{1.15em}\aster
+         \end{center}
+      } %\parbox
+      \vspace{-0.75em}
+   \end{center}
+}
+
+
+\newcommand{\intro}[1]{\textbf{#1}}
+
+%\newcommand{\obcy}[1]{\emph{#1}}
+\newcommand{\obcy}[1]{#1}
+%\newcommand{\british}[1]{{\selectlanguage{british}\obcy{#1}}}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{\huge\bfseries grupowanie danych niejednorodnych}
+\author{[NTwI] Obliczenia ziarniste}
+\date{projekt, \the\year}
+
+\begin{document}
+\maketitle
+
+
+\subsection*{Problem}
+
+Nieraz dane, którymi dysponujemy, nie są jednorodne. Przykładowo pochodzą z różnych źródeł i nie mają takich samych atrybutów. 
+W przypadku brakujących wartości atrybutów można je próbować uzupełniać. Metod uzupełniania jest wiele. Jedną z nich jest uzupełnianie na podstawie wartości $k$ najbliższych sąsiadów. Jednak to podejście ma złożoność $O(n^2)$. Można zatem zmienić trochę podejście. A mianowicie:
+\begin{enumerate}
+\item Dane z każdego z $z$ źródeł granulujemy na $g$ granul liniowym algorytmem grupowania, np. FCM. Przyjmijmy, że z każdego źródła mamy $n$ danych.  To daje złożoność $O(zng)$.
+\item Korzystamy z algorytmu $k$ najbliższych sąsiadów, żeby znaleźć wartości brakujące. Złożoność: $O(z^2 g^2)$.
+\item Grupujemy uzupełnione wartości na $l$ grup. Złożoność: $O(zgl)$.
+\item Całkowita złożoność: $O(zng+z^2 g^2+zgl)$, co jest mniej niż $O(z^2n^2l)$,  bo $ g < n$.
+\end{enumerate}
+
+
+
+\subsection*{Zadanie}
+Zadanie polega na empirycznym sprawdzeniu, czy zastosowanie takiego podejścia rzeczywiście skróci czas grupowania zachowując jednocześnie jakość grupowania.
+\end{document}
+
+
+
+
