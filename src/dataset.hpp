@@ -45,7 +45,7 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 	struct data_file
 	{
 		std::vector<size_t> attributes;
-		std::vector<float> data;
+		std::vector<T> data;
 	};
 	
 	std::map<fs::path, data_file> data_files;
@@ -71,8 +71,8 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 			LOG << "found data file - " << entry << "\n";
 			std::ifstream f{entry.path()};
 			std::copy(
-				std::istream_iterator<float>{f},
-				std::istream_iterator<float>{},
+				std::istream_iterator<T>{f},
+				std::istream_iterator<T>{},
 				std::back_inserter(data_file.data)
 			);
 		}
