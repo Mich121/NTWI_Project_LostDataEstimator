@@ -53,12 +53,12 @@ void granulate_fcm(
 			T membership_sum = 0;
 			
 			for (size_t cluster_id = 0; cluster_id < num_clusters; cluster_id++)
-				membership_sum += membership_value(cluster_id, record_id);
+				membership_sum += membership_value(cluster_id, record_id - begin_id);
 			
 			assert(membership_sum > 0);
 			
 			for (size_t cluster_id = 0; cluster_id < num_clusters; cluster_id++)
-				membership_value(cluster_id, record_id) /= membership_sum;
+				membership_value(cluster_id, record_id - begin_id) /= membership_sum;
 		}
 	};
 	
@@ -81,7 +81,7 @@ void granulate_fcm(
 			T factor_sum = 0;
 			for (size_t record_id = begin_id; record_id < end_id; record_id++)
 			{
-				auto factor = std::pow(membership_value(cluster_id, record_id), exponent);
+				auto factor = std::pow(membership_value(cluster_id, record_id - begin_id), exponent);
 				factor_sum += factor;
 				
 				for (size_t attrib = 0; attrib < num_attribs; attrib++)
@@ -97,11 +97,11 @@ void granulate_fcm(
 		{
 			for (size_t record_id = begin_id; record_id < end_id; record_id++)
 			{
-				cluster_distance(cluster_id, record_id) = 0;
+				cluster_distance(cluster_id, record_id - begin_id) = 0;
 				for (size_t attrib = 0; attrib < num_attribs; attrib++)
 				{
 					auto diff = *input.get(record_id, attrib_ids.at(attrib)) - cluster_center_attrib(cluster_id, attrib);
-					cluster_distance(cluster_id, record_id) += diff * diff;
+					cluster_distance(cluster_id, record_id - begin_id) += diff * diff;
 				}
 			}
 		}

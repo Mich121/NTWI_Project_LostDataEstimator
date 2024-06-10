@@ -21,13 +21,17 @@ class sparse_dataset
 	static_assert(std::is_floating_point_v<T>, "sparse_dataset must contain floating-point data");
 	
 public:
+	explicit sparse_dataset(size_t num_attributes);
 	explicit sparse_dataset(const std::filesystem::path &dir_path);
 	
 	auto size() const {return m_data.size() / m_num_attributes;}
 	auto num_attributes() const {return m_num_attributes;} 
+	auto num_sources() const {return m_sources.empty() ? 0 : m_sources.back() + 1;}
 	
 	std::optional<T> get(size_t id, size_t attr) const;
 	size_t get_source(size_t id) const {return m_sources.at(id);}
+	std::vector<size_t> get_record_attribute_ids(size_t id) const;
+	std::pair<size_t, size_t> get_source_data_range(size_t source) const;
 	void insert(size_t source_id, const std::span<T> &data);
 	bool is_valid() const;
 	
@@ -40,6 +44,11 @@ private:
 	std::vector<size_t> m_sources;
 };
 
+template <typename T>
+sparse_dataset<T>::sparse_dataset(size_t num_attributes) :
+	m_num_attributes(num_attributes)
+{
+}
 
 template <typename T>
 sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
@@ -130,10 +139,30 @@ std::optional<T> sparse_dataset<T>::get(size_t id, size_t attr) const
 }
 
 template <typename T>
+std::vector<size_t> sparse_dataset<T>::get_record_attribute_ids(size_t id) const
+{
+	std::vector<size_t> attribs;
+	attribs.reserve(num_attributes());
+	
+	for (size_t i = 0; i < num_attributes(); i++)
+		if (get(id, i).has_value())
+			attribs.push_back(i);
+	
+	return attribs;
+}
+
+template <typename T>
+std::pair<size_t, size_t> sparse_dataset<T>::get_source_data_range(size_t source) const
+{
+	auto [begin, end] = std::equal_range(m_sources.begin(), m_sources.end(), source);
+	return {begin - m_sources.begin(), end - m_sources.begin()};
+}
+
+template <typename T>
 void sparse_dataset<T>::insert(size_t source, const std::span<T> &data)
 {
 	assert(data.size() == num_attributes());
-	assert(m_sources.empty() || (m_sources.back() <= source));
+	assert(m_sources.empty() || m_sources.back() == source || m_sources.back() + 1 == source);
 	
 	add_row(source);
 	std::copy(data.begin(), data.end(), &m_data[get_index(this->size() - 1, 0)]);
@@ -180,6 +209,8 @@ std::ostream &operator<<(std::ostream &s, const sparse_dataset<T> &ds)
 	s << "Sparse Dataset - " << ds.size() << " entries, max attributes: " << ds.num_attributes() << "\n";
 	for (size_t id = 0; id < ds.size(); id++)
 	{
+		s << "[" << std::setw(2) << std::setfill('0') << ds.get_source(id) << std::setfill(' ') << "] "; // I hate iostream so much
+		s << std::setw(4) << id << ") ";
 		for (size_t attr_id = 0; attr_id < ds.num_attributes(); attr_id++)
 		{
 			auto val = ds.get(id, attr_id);
