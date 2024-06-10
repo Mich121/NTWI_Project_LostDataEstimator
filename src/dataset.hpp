@@ -12,6 +12,7 @@
 #include <map>
 #include <iomanip>
 #include <algorithm>
+#include <span>
 #include "utils.hpp"
 
 template <typename T>
@@ -26,15 +27,17 @@ public:
 	auto num_attributes() const {return m_num_attributes;} 
 	
 	std::optional<T> get(size_t id, size_t attr) const;
+	size_t get_source(size_t id) const {return m_sources.at(id);}
+	void insert(size_t source_id, const std::span<T> &data);
+	bool is_valid() const;
 	
 private:
 	size_t get_index(size_t id, size_t attr) const;
-	void add_rows(size_t num_rows);
-	void add_row() {add_rows(1);}
-	bool is_complete() const;
+	void add_row(size_t source_id);
 	
 	size_t m_num_attributes;
 	std::vector<T> m_data;
+	std::vector<size_t> m_sources;
 };
 
 
@@ -92,9 +95,10 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 	LOG << "max attribute id: " << max_attribute << "\n";
 	m_num_attributes = max_attribute + 1;
 	
+	size_t source_id = 0;
 	for (const auto &[path, d] : data_files)
 	{
-		LOG << "loading " << path << "...\n";
+		LOG << "[src " << source_id << "] loading " << path << "...\n";
 		assert(!d.attributes.empty());
 		assert(!d.data.empty());
 		
@@ -103,7 +107,7 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 		
 		for (auto row = 0u; row < num_rows; row++)
 		{
-			add_row();
+			add_row(source_id);
 			for (auto col = 0u; col < d.attributes.size(); col++)
 			{
 				auto attr_id = d.attributes[col];
@@ -111,9 +115,11 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 				m_data[get_index(this->size() - 1, attr_id)] = value;
 			}
 		}
+		
+		source_id++;
 	}
 	
-	assert(this->is_complete());
+	assert(this->is_valid());
 }
 
 template <typename T>
@@ -121,6 +127,16 @@ std::optional<T> sparse_dataset<T>::get(size_t id, size_t attr) const
 {
 	auto value = m_data[get_index(id, attr)];
 	return std::isnan(value) ? std::optional<T>{} : std::optional<T>{value};
+}
+
+template <typename T>
+void sparse_dataset<T>::insert(size_t source, const std::span<T> &data)
+{
+	assert(data.size() == num_attributes());
+	assert(m_sources.empty() || (m_sources.back() <= source));
+	
+	add_row(source);
+	std::copy(data.begin(), data.end(), &m_data[get_index(this->size() - 1, 0)]);
 }
 
 template <typename T>
@@ -132,13 +148,14 @@ size_t sparse_dataset<T>::get_index(size_t id, size_t attr) const
 }
 
 template <typename T>
-void sparse_dataset<T>::add_rows(size_t num_rows)
+void sparse_dataset<T>::add_row(size_t source)
 {
-	m_data.resize(m_data.size() + num_rows * num_attributes(), NAN);
+	m_data.resize(m_data.size() + num_attributes(), NAN);
+	m_sources.push_back(source);
 }
 
 template <typename T>
-bool sparse_dataset<T>::is_complete() const
+bool sparse_dataset<T>::is_valid() const
 {
 	for (auto id = 0u; id < size(); id++)
 	{
@@ -153,7 +170,8 @@ bool sparse_dataset<T>::is_complete() const
 		if (!has_any_attr)
 			return false;
 	}
-	return true;
+	
+	return std::is_sorted(m_sources.begin(), m_sources.end());
 }
 
 template <typename T>
@@ -168,7 +186,7 @@ std::ostream &operator<<(std::ostream &s, const sparse_dataset<T> &ds)
 			if (val)
 				s << std::setw(10) << *val;
 			else
-				s << std::setw(10) << "xxxxxx";
+				s << std::setw(10) << "  ??  ";
 		}
 		s << "\n";
 	}

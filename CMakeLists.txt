@@ -9,3 +9,6 @@ add_compile_definitions(ntwi
 	"DEBUG_LOGGING"
 )
 
+set_target_properties(ntwi PROPERTIES
+	CXX_STANDARD 20
+)
