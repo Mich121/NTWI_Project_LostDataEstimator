@@ -106,7 +106,22 @@ void granulate_fcm(
 			}
 		}
 		
-		// Update partition
+		// Update partition matrix
+		for (size_t cluster_id = 0; cluster_id < num_clusters; cluster_id++)
+		{
+			for (size_t record_id = begin_id; record_id < end_id; record_id++)
+			{
+				T sum = 0;
+				for (size_t i = 0; i < num_clusters; i++)
+					sum += std::pow(
+						cluster_distance(cluster_id, record_id - begin_id) / cluster_distance(i, record_id - begin_id),
+						1 / (exponent - 1)
+					);
+				
+				membership_value(cluster_id, record_id - begin_id) = 1 / sum;
+			}
+		}
+		
 		normalize_partition_matrix();
 	}
 	
