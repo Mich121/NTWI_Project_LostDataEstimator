@@ -1,5 +1,6 @@
 #include "dataset.hpp"
 #include "fcm.hpp"
+#include "knn.hpp"
 #include <random>
 
 int main(int argc, char *argv[])
@@ -34,7 +35,10 @@ int main(int argc, char *argv[])
 		);
 	}
 	
-	std::cout << granules << std::endl;
+	// std::cout << granules << std::endl;
+	
+	knn_impute(dataset, 5);
+	std::cout << dataset << "\n";
 	
 	return 0;
 }
