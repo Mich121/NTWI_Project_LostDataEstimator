@@ -37,8 +37,8 @@ int main(int argc, char *argv[])
 	
 	// std::cout << granules << std::endl;
 	
-	knn_impute(dataset, 5);
-	std::cout << dataset << "\n";
+	auto imputed = knn_impute(dataset, 3);
+	std::cout << imputed << "\n";
 	
 	return 0;
 }
