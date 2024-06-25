@@ -18,7 +18,6 @@ if ((CMAKE_CXX_COMPILER_ID STREQUAL "Clang") OR (CMAKE_CXX_COMPILER_ID STREQUAL 
 		-Wall
 		-Wextra
 		-Wno-unused-parameter
-		$<$<CONFIG:Release>:-ffast-math>
 		$<$<CONFIG:Release>:-march=native>
 	)
 endif()
