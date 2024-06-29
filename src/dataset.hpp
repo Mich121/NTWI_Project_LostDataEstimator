@@ -34,7 +34,11 @@ public:
 	std::pair<size_t, size_t> get_source_data_range(size_t source) const;
 	void insert(size_t source_id, const std::span<T> &data);
 	bool is_valid() const;
-	
+	void set(size_t id, size_t attr, const T& value);
+	void printNestedVector(const std::vector<std::vector<T>>& data);
+	std::vector<std::vector<T>> createNestedVectorFromDataset();
+	std::vector<T>& getData() { return m_data; }
+
 private:
 	size_t get_index(size_t id, size_t attr) const;
 	void add_row(size_t source_id);
@@ -42,6 +46,7 @@ private:
 	size_t m_num_attributes;
 	std::vector<T> m_data;
 	std::vector<size_t> m_sources;
+	std::vector<std::vector<T>> m_flatStructure;
 };
 
 template <typename T>
@@ -70,7 +75,7 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 		
 		if (entry.path().extension() == ".attr")
 		{
-			LOG << "found attribute file - " << entry << "\n";
+			//LOG << "found attribute file - " << entry << "\n";
 			std::ifstream f{entry.path()};
 			std::copy(
 				std::istream_iterator<size_t>{f},
@@ -80,7 +85,7 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 		}
 		else if (entry.path().extension() == ".data")
 		{
-			LOG << "found data file - " << entry << "\n";
+			//LOG << "found data file - " << entry << "\n";
 			std::ifstream f{entry.path()};
 			std::copy(
 				std::istream_iterator<T>{f},
@@ -90,7 +95,7 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 		}
 		else
 		{
-			LOG << "unrecognized file in dataset - " << entry << "\n";
+			//LOG << "unrecognized file in dataset - " << entry << "\n";
 		}
 	}
 	
@@ -203,6 +208,45 @@ bool sparse_dataset<T>::is_valid() const
 	return std::is_sorted(m_sources.begin(), m_sources.end());
 }
 
+template<typename T>
+void sparse_dataset<T>::set(size_t id, size_t attr, const T& value)
+{
+	size_t idx = get_index(id, attr);
+	m_data[idx] = value;
+}
+
+template <typename T>
+void sparse_dataset<T>::printNestedVector(const std::vector<std::vector<T>>& vv) {
+	std::cout << "[\n";
+	for (const auto& row : vv) {
+		std::cout << "  [ ";
+		for (float val : row) {
+			std::cout << val << " ";
+		}
+		std::cout << "]\n";
+	}
+	std::cout << "]\n";
+}
+
+template <typename T>
+std::vector<std::vector<T>> sparse_dataset<T>::createNestedVectorFromDataset() {
+
+	if (m_data.size() % num_attributes() != 0) {
+		return m_flatStructure;
+	}
+
+	for (size_t i = 0; i < m_data.size(); i += num_attributes()) {
+		std::vector<T> temp;
+		for (size_t j = i; j < i + num_attributes(); ++j) 
+		{
+			temp.push_back(m_data[j]);
+		}
+		m_flatStructure.push_back(temp);
+	}
+
+	return m_flatStructure;
+}
+
 template <typename T>
 std::ostream &operator<<(std::ostream &s, const sparse_dataset<T> &ds)
 {
@@ -224,3 +268,4 @@ std::ostream &operator<<(std::ostream &s, const sparse_dataset<T> &ds)
 	
 	return s;
 }
+

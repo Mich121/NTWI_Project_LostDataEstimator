@@ -1,12 +1,13 @@
 #include "dataset.hpp"
 #include "fcm.hpp"
 #include <random>
+#include "knnImp.hpp"
 
 int main(int argc, char *argv[])
 {
 	assert(argc > 1);
 	sparse_dataset<float> dataset{argv[1]};
-	std::cout << dataset << "\n";
+	//std::cout << dataset << "\n";
 	
 	
 	std::mt19937 rng{1}; // TODO seed rng
@@ -35,6 +36,10 @@ int main(int argc, char *argv[])
 	}
 	
 	std::cout << granules << std::endl;
-	
+
+	size_t k = 3;
+	std::vector<float> data = dataset.getData();
+	knnImpute(dataset.getData(), dataset.num_attributes(), k);
+	std::cout << dataset << std::endl;
 	return 0;
 }
