@@ -38,10 +38,8 @@ int main(int argc, char *argv[])
 	std::cout << granules << std::endl;
 
 	size_t k = 3;
-	knnImputation knnImp(dataset.num_attributes());
-	vector<vector<float>> data = dataset.createNestedVectorFromDataset();
-	vector<vector<float>> imputedData = knnImp.knnImpute(data, k);
-	dataset.printNestedVector(imputedData);
-	
+	std::vector<float> data = dataset.getData();
+	knnImpute(dataset.getData(), dataset.num_attributes(), k);
+	std::cout << dataset << std::endl;
 	return 0;
 }

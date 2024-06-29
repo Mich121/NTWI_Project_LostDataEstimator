@@ -2,83 +2,51 @@
 #include <span>
 #include <vector>
 
-using namespace std;
+void knnImpute(std::vector<float>& data, size_t attributesCount, size_t k) {
 
-class knnImputation
-{
-    size_t m_attributesCount;
+    size_t numInstances = data.size() / attributesCount;
 
-public:
+    for (size_t attr = 0; attr < attributesCount; ++attr) {
+        for (size_t row = 0; row < numInstances; ++row) {
+            size_t index = row * attributesCount + attr;
 
-    knnImputation(size_t attributesCount): m_attributesCount(attributesCount)
-    {
-    }
+            if (std::isnan(data[index])) {
+                std::vector<std::pair<float, size_t>> distances;
+                for (size_t otherRow = 0; otherRow < numInstances; ++otherRow) {
+                    size_t otherIndex = otherRow * attributesCount + attr;
 
-    double euclideanDistance(const vector<float>& row1, const vector<float>& row2) {
-        float sum = 0.0;
-        size_t count = 0;
-        float weight = 0.0;
+                    if (otherRow != row && !std::isnan(data[otherIndex])) {
+                        float distance = 0.0;
+                        float sum = 0.0;
+                        size_t validCount = 0;
 
-        for (size_t i = 0; i < row1.size(); ++i) {
-            if (!isnan(row1[i]) && !isnan(row2[i])) {
-                sum += pow(row1[i] - row2[i], 2);
-                count++;
-            }
-        }
-        weight = static_cast<float>(m_attributesCount / count);
-        sum *= weight;
-        return count > 0 ? sqrt(sum) : numeric_limits<float>::max();
-    }
+                        for (size_t attr = 0; attr < attributesCount; ++attr) {
+                            size_t index1 = row * attributesCount + attr;
+                            size_t index2 = otherRow * attributesCount + attr;
 
-    vector<size_t> findKNearestNeighbors(const vector<vector<float>>& data, size_t index, size_t jIndex, size_t k) {
-        vector<pair<float, size_t>> distances;
-
-        for (size_t i = 0; i < data.size(); ++i) {
-            if (i != index) {
-                double distance = euclideanDistance(data[index], data[i]);
-                distances.push_back({ distance, i });
-            }
-        }
-
-        sort(distances.begin(), distances.end());
-        vector<size_t> neighbors;
-
-        for (size_t i = 0; i < distances.size(); ++i) {
-            if (!isnan(data[distances[i].second][jIndex])) {
-                neighbors.push_back(distances[i].second);
-            }
-
-            if (neighbors.size() == k)
-                break;
-        }
-
-        return neighbors;
-    }
-
-    vector<vector<float>> knnImpute(const vector<vector<float>>& data, size_t k) {
-        vector<vector<float>> imputedData = data;
-
-        for (size_t i = 0; i < data.size(); ++i) {
-            for (size_t j = 0; j < data[i].size(); ++j) {
-                if (isnan(data[i][j])) {
-                    vector<size_t> neighbors = findKNearestNeighbors(data, i, j, k);
-                    float sum = 0.0;
-                    size_t count = 0;
-
-                    for (size_t neighbor : neighbors) {
-                        if (!isnan(data[neighbor][j])) {
-                            sum += data[neighbor][j];
-                            count++;
+                            if (!std::isnan(data[index1]) && !std::isnan(data[index2])) {
+                                sum += std::pow(data[index1] - data[index2], 2);
+                                ++validCount;
+                            }
                         }
+                        distance = validCount > 0 ? std::sqrt(sum / validCount) : std::numeric_limits<float>::max();
+                        distances.emplace_back(distance, otherIndex);
                     }
+                }
 
-                    if (count > 0) {
-                        imputedData[i][j] = sum / count;
-                    }
+                std::sort(distances.begin(), distances.end());
+
+                float sum = 0.0;
+                size_t count = 0;
+                for (size_t i = 0; i < distances.size() && count < k; ++i) {
+                    sum += data[distances[i].second];
+                    ++count;
+                }
+
+                if (count > 0) {
+                    data[index] = sum / count;
                 }
             }
         }
-
-        return imputedData;
     }
-};
+}

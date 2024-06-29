@@ -28,18 +28,17 @@ public:
 	auto num_attributes() const {return m_num_attributes;} 
 	auto num_sources() const {return m_sources.empty() ? 0 : m_sources.back() + 1;}
 	
-	std::optional<T> get(size_t id, size_t attr) const; //get z refer
+	std::optional<T> get(size_t id, size_t attr) const;
 	size_t get_source(size_t id) const {return m_sources.at(id);}
 	std::vector<size_t> get_record_attribute_ids(size_t id) const;
 	std::pair<size_t, size_t> get_source_data_range(size_t source) const;
 	void insert(size_t source_id, const std::span<T> &data);
 	bool is_valid() const;
 	void set(size_t id, size_t attr, const T& value);
-	std::vector<T> get_data() { return m_data; }
 	void printNestedVector(const std::vector<std::vector<T>>& data);
 	std::vector<std::vector<T>> createNestedVectorFromDataset();
+	std::vector<T>& getData() { return m_data; }
 
-	
 private:
 	size_t get_index(size_t id, size_t attr) const;
 	void add_row(size_t source_id);
@@ -213,32 +212,8 @@ template<typename T>
 void sparse_dataset<T>::set(size_t id, size_t attr, const T& value)
 {
 	size_t idx = get_index(id, attr);
-	if (idx < m_data.size()) 
-	{
-		m_data[idx] = value;
-	}
+	m_data[idx] = value;
 }
-/*
-template <typename T>
-void sparse_dataset<T>::printNestedVector(const std::vector<std::vector<T>>& data)
-{
-	for (size_t row = 0; row < data[0].size(); ++row)
-	{
-		for (size_t col = 0; col < data.size(); ++col)
-		{
-			if (isnan(data[col][row]))
-			{
-				std::cout << "?? ";
-			}
-			else
-			{
-				std::cout << data[col][row] << " ";
-			}
-		}
-		std::cout << std::endl;
-	}
-}
-*/
 
 template <typename T>
 void sparse_dataset<T>::printNestedVector(const std::vector<std::vector<T>>& vv) {
@@ -252,21 +227,6 @@ void sparse_dataset<T>::printNestedVector(const std::vector<std::vector<T>>& vv)
 	}
 	std::cout << "]\n";
 }
-/*
-template <typename T>
-std::vector<std::vector<T>> sparse_dataset<T>::createNestedVectorFromDataset()
-{
-	std::vector<std::vector<T>> vv(3);
-	for (size_t i = 0; i < data.size(); ++i)
-	{
-		if (!std::isnan(data[i]))
-			vv[i % 3].push_back(data[i]);
-		else
-			vv[i % 3].push_back(std::numeric_limits<T>::quiet_NaN());
-	}
-	return vv;
-}
-*/
 
 template <typename T>
 std::vector<std::vector<T>> sparse_dataset<T>::createNestedVectorFromDataset() {
@@ -277,7 +237,7 @@ std::vector<std::vector<T>> sparse_dataset<T>::createNestedVectorFromDataset() {
 
 	for (size_t i = 0; i < m_data.size(); i += num_attributes()) {
 		std::vector<T> temp;
-		for (int j = i; j < i + num_attributes(); ++j) 
+		for (size_t j = i; j < i + num_attributes(); ++j) 
 		{
 			temp.push_back(m_data[j]);
 		}
