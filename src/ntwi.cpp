@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 		int iterations = 10;
 		int num_clusters = 3;
 		
-		granulate_fcm(
+		fcm_granulate(
 			dataset,
 			granules,
 			record_begin,
