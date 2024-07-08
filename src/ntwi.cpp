@@ -147,13 +147,14 @@ void eval_clustering(const sparse_dataset<T> &ds, size_t num_clusters)
 	struct cluster_info
 	{
 		explicit cluster_info(size_t num_attribs) :
-			center(num_attribs)
+			center(num_attribs),
+			variance(num_attribs)
 		{
 		}
 		
 		std::vector<T> center;
+		std::vector<T> variance;
 		size_t num_items = 0;
-		T variance = 0;
 	};
 	
 	std::vector<cluster_info> clusters(num_clusters, cluster_info(ds.num_attributes()));
@@ -181,18 +182,28 @@ void eval_clustering(const sparse_dataset<T> &ds, size_t num_clusters)
 		for (size_t attrib_id = 0; attrib_id < ds.num_attributes(); attrib_id++)
 		{
 			auto deviation = cluster.center.at(attrib_id) - ds.get(i, attrib_id).value();
-			cluster.variance += deviation * deviation;
+			cluster.variance.at(attrib_id) += deviation * deviation;
 		}
 	}
 	
 	for (auto &cluster : clusters)
 		if (cluster.num_items)
-			cluster.variance /= cluster.num_items;
+			for (size_t attrib_id = 0; attrib_id < ds.num_attributes(); attrib_id++)
+				cluster.variance.at(attrib_id) /= cluster.num_items;
 	
-	std::cout << "ID, Items, Variance\n";
+	std::cout << "ID, Items";
+	for (size_t attrib_id = 0; attrib_id < ds.num_attributes(); attrib_id++)
+		std::cout << ", Var" << attrib_id;
+	std::cout << "\n";
+	
 	for (size_t i = 0; i < clusters.size(); i++)
 		if (clusters[i].num_items)
-			std::cout << i << ", " << clusters[i].num_items << ", " << clusters[i].variance << "\n";
+		{
+			std::cout << i << ", " << clusters[i].num_items;
+			for (size_t attrib_id = 0; attrib_id < ds.num_attributes(); attrib_id++)
+				std::cout << ", " << clusters[i].variance.at(attrib_id);
+			std::cout << "\n";
+		}
 }
 
 int main(int argc, char *argv[])
