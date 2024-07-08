@@ -59,7 +59,7 @@ auto knn_impute(const sparse_dataset<T> &ds, int k)
 			
 			T dist = nan_distance_sqr_except_attr(ds, i, j);
 			
-			for (int attr_id = 0; attr_id < ds.num_attributes(); attr_id++)
+			for (size_t attr_id = 0; attr_id < ds.num_attributes(); attr_id++)
 			{
 				if (ds.get(i, attr_id) && !ds.get(j, attr_id)) // i has attribute, j is missing it
 					update_nearest(j, attr_id, dist, i);
@@ -71,7 +71,7 @@ auto knn_impute(const sparse_dataset<T> &ds, int k)
 
 	
 	for (size_t id = 0; id < ds.size(); id++)
-		for (int attr_id = 0; attr_id < ds.num_attributes(); attr_id++)
+		for (size_t attr_id = 0; attr_id < ds.num_attributes(); attr_id++)
 			if (!ds.get(id, attr_id))
 			{
 				T sum = 0;
@@ -80,7 +80,7 @@ auto knn_impute(const sparse_dataset<T> &ds, int k)
 				for (int i = 0; i < k; i++)
 				{
 					auto neigh = nearest(id, attr_id, i);
-					if (neigh.second != -1)
+					if (neigh.second != static_cast<size_t>(-1))
 					{
 						assert(ds.get(neigh.second, attr_id));
 						sum += *ds.get(neigh.second, attr_id);
