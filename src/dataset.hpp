@@ -29,6 +29,7 @@ public:
 	
 	std::optional<T> get(size_t id, size_t attr) const;
 	T &get_ref(size_t id, size_t attr);
+	const T &get_ref(size_t id, size_t attr) const;
 	size_t get_source(size_t id) const {return m_sources.at(id);}
 	std::vector<size_t> get_record_attribute_ids(size_t id) const;
 	std::pair<size_t, size_t> get_source_data_range(size_t source) const;
@@ -133,6 +134,12 @@ sparse_dataset<T>::sparse_dataset(const std::filesystem::path &dir_path)
 
 template <typename T>
 T &sparse_dataset<T>::get_ref(size_t id, size_t attr)
+{
+	return m_data[get_index(id, attr)];
+}
+
+template <typename T>
+const T &sparse_dataset<T>::get_ref(size_t id, size_t attr) const
 {
 	return m_data[get_index(id, attr)];
 }

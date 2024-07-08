@@ -26,8 +26,6 @@ template <typename T>
 auto knn_impute(const sparse_dataset<T> &ds, int k)
 {
 	auto imputed = ds;
-
-	// auto t0 = std::chrono::high_resolution_clock::now();
 	
 	std::vector<std::pair<T, size_t>> nearest_arr(ds.size() * ds.num_attributes() * k + 1, {std::numeric_limits<T>::max(), -1});
 	auto nearest = [&nearest_arr, k, &ds](size_t id, int num_provided_attr, int num_neighbor) -> std::pair<T, size_t>&
@@ -93,11 +91,6 @@ auto knn_impute(const sparse_dataset<T> &ds, int k)
 				assert(neigh_count);
 				imputed.get_ref(id, attr_id) = sum / neigh_count;
 			}
-	
-	/*uto t1 = std::chrono::high_resolution_clock::now();
-	using namespace std::chrono_literals;
-	auto dur = (t1 - t0) / 1.0s;
-	std::cout << " t = " << dur << std::endl;*/
 	
 	return imputed;
 }
