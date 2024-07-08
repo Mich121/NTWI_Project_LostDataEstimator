@@ -191,27 +191,38 @@ void fcm_granulate(
 	}	
 }
 
-// template <typename T, typename RNG>
-// void fcm_group(
-// 	const sparse_dataset<T> &ds,
-// 	const size_t begin_id,
-// 	const size_t end_id,
-// 	const std::span<size_t> &attrib_ids,
-// 	const size_t num_clusters,
-// 	const T exponent,
-// 	const size_t num_iterations,
-// 	RNG &rng)
-// {	
-// 	auto result = fcm(
-// 		ds,
-// 		begin_id,
-// 		end_id,
-// 		attrib_ids,
-// 		num_clusters,
-// 		exponent,
-// 		num_iterations,
-// 		rng
-// 	);
-// 	
-// 		
-// }
+template <typename T, typename RNG>
+void fcm_group(
+	sparse_dataset<T> &ds,
+	const size_t begin_id,
+	const size_t end_id,
+	const std::span<size_t> &attrib_ids,
+	const size_t num_clusters,
+	const T exponent,
+	const size_t num_iterations,
+	RNG &rng)
+{	
+	auto result = fcm(
+		ds,
+		begin_id,
+		end_id,
+		attrib_ids,
+		num_clusters,
+		exponent,
+		num_iterations,
+		rng
+	);
+	
+	const auto num_records = end_id - begin_id;
+	for (size_t i = 0; i < num_records; i++)
+	{
+		size_t best_cluster_id = 0;
+		auto best_cluster_membership = result.membership_value(0, i);
+		
+		for (size_t cluster_id = 1; cluster_id < num_clusters; cluster_id++)
+			if (result.membership_value(cluster_id, i) > best_cluster_membership)
+				best_cluster_id = cluster_id;
+		
+		ds.set_source(i, best_cluster_id);
+	}
+}

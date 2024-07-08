@@ -2,14 +2,18 @@
 #include "fcm.hpp"
 #include "knn.hpp"
 #include <random>
+#include <functional>
+#include <map>
 
 struct naive_algo_config
 {
 	std::mt19937 *rng = nullptr;
+	bool print_dataset = false;
 	
 	struct
 	{
 		int knn_neighbors = 3;
+		bool print_imputed = false;
 	} imputation;
 	
 	struct
@@ -35,13 +39,14 @@ sparse_dataset<float> naive_approach(const naive_algo_config &config, const spar
 	auto imputed = knn_impute(dataset, config.imputation.knn_neighbors);
 	sparse_dataset<float> clusters{dataset.num_attributes()};
 	
-	std::cout << imputed << "\n";
+	if (config.imputation.print_imputed)
+		std::cout << imputed << "\n";
+	
 	std::vector<size_t> attribs(dataset.num_attributes());
 	std::iota(attribs.begin(), attribs.end(), 0);
 	
-	fcm_granulate(
+	fcm_group(
 		imputed,
-		clusters,
 		0,
 		dataset.size(), 
 		attribs,
@@ -51,9 +56,8 @@ sparse_dataset<float> naive_approach(const naive_algo_config &config, const spar
 		*config.rng
 	);
 	
-	return clusters;
+	return imputed;
 }
-
 
 sparse_dataset<float> our_approach(const our_algo_config &config, const sparse_dataset<float> &dataset)
 {
@@ -80,15 +84,14 @@ sparse_dataset<float> our_approach(const our_algo_config &config, const sparse_d
 	
 	auto imputed_granules = knn_impute(granules, config.imputation.knn_neighbors);
 	
-	std::cout << imputed_granules << "\n";
+	if (config.imputation.print_imputed)
+		std::cout << imputed_granules << "\n";
 	
 	std::vector<size_t> attribs(dataset.num_attributes());
 	std::iota(attribs.begin(), attribs.end(), 0);
 	
-	sparse_dataset<float> clusters{dataset.num_attributes()};
-	fcm_granulate(
+	fcm_group(
 		imputed_granules,
-		clusters,
 		0,
 		imputed_granules.size(), 
 		attribs,
@@ -98,21 +101,54 @@ sparse_dataset<float> our_approach(const our_algo_config &config, const sparse_d
 		*config.rng
 	);
 	
-	return clusters;
+	return imputed_granules;
 }
 
 int main(int argc, char *argv[])
 {
-	assert(argc > 1);
+	if (argc < 2)
+	{
+		std::cerr << "Please provide path to the dataset!" << std::endl;
+		return 0;
+	}
+	
+	our_algo_config config;
+	bool use_our_algo = true;
+	
+	std::map<std::string, std::function<void(float)>> arg_actions
+	{
+		{"--naive", [&](auto val){use_our_algo = val != 0;}},
+		{"--print-dataset", [&](auto val){config.print_dataset = val != 0;}},
+		{"--print-imputed", [&](auto val){config.imputation.print_imputed = val != 0;}},
+		{"--granules", [&](auto val){config.granulation.num_granules = val;}},
+		{"--clusters", [&](auto val){config.clustering.num_final_clusters = val;}},
+		{"--granulation-exponent", [&](auto val){config.granulation.fuzzy_exponent = val;}},
+		{"--clustering-exponent", [&](auto val){config.clustering.fuzzy_exponent = val;}},
+		{"--granulation-iters", [&](auto val){config.granulation.iterations = val;}},
+		{"--clustering-iters", [&](auto val){config.clustering.iterations = val;}},
+		{"--knn", [&](auto val){config.imputation.knn_neighbors = val;}},
+	};
+	
+	for (int i = 2; i < argc; i += 2)
+	{
+		std::stringstream ss{argv[i + 1]};
+		float f;
+		if (!(ss >> f))
+		{
+			std::cerr << "Invalid value for option " << argv[i] << std::endl;
+			return 1;
+		}
+		arg_actions.at(argv[i])(f);
+	}
+	
 	sparse_dataset<float> dataset{argv[1]};
-	std::cout << dataset << "\n";
+	
+	if (config.print_dataset)
+		std::cout << dataset << "\n";
 	
 	std::mt19937 rng{1}; // TODO seed rng
-
-	bool use_our_algo = true;
-	our_algo_config config;
 	config.rng = &rng;
-	
+
 	auto result = use_our_algo ? our_approach(config, dataset) : naive_approach(config, dataset);
 	std::cout << result << "\n";
 	
